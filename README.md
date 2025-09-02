@@ -1,2 +1,1 @@
-# rejection-bot
-REJECTION BOT ACTS AS THE NAME SAYS
+
