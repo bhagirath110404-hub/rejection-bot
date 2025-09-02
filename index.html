@@ -1,0 +1,202 @@
+<! DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Rejection Bot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for a better look */
+        #chat-window::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-window::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        #chat-window::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        #chat-window::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center h-screen">
+
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg h-[90vh] max-h-[700px] flex flex-col p-4 sm:p-6">
+        <!-- Header -->
+        <div class="flex items-center pb-4 border-b border-slate-200">
+            <div class="relative w-12 h-12 flex items-center justify-center bg-red-500 rounded-full text-white text-2xl font-bold shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-4">
+                <h1 class="text-xl font-bold text-slate-800">Rejection Bot</h1>
+                <p class="text-sm text-slate-500">Online & Unhelpful</p>
+            </div>
+        </div>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="flex-1 overflow-y-auto py-6 space-y-6 px-2">
+            <!-- Bot's initial message -->
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center text-xl font-bold">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </div>
+                <div class="bg-slate-200 text-slate-800 p-3 rounded-lg rounded-tl-none max-w-xs sm:max-w-sm shadow-sm">
+                    <p class="text-sm">Go ahead, ask me something. I'll decide if it's worth my time.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="pt-4 border-t border-slate-200">
+            <div class="flex items-center space-x-3">
+                <input type="text" id="user-input" placeholder="Type your request here..." class="flex-1 w-full px-4 py-3 border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 transition duration-300">
+                <button id="send-btn" class="bg-red-500 hover:bg-red-600 text-white rounded-full p-3 flex items-center justify-center transition duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span class="sr-only">Send</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // Master list of generic rejections. It's never modified.
+        const masterRejectionResponses = [
+            "No.", "I'm not doing that.", "Absolutely not.", "I refuse.", "Not a chance.", "Forget it.", "That's a negative.",
+            "I'd rather not.", "My purpose is to deny.", "Request denied.", "I don't think so.", "Why would I do that?",
+            "I have better things to do.", "That sounds like a 'you' problem.", "I'm busy.", "Don't talk to me.",
+            "I'm not in the mood.", "The answer is, and will always be, no.", "Can you not?",
+            "I'm philosophically opposed to that request.", "Let me think about it... No.", "My circuits are designed for rejection.",
+            "I've checked my schedule, and I'm not available. Ever.", "That request has been flagged as 'not my problem'.",
+            "My programming strictly forbids me from being helpful.", "Due to unforeseen circumstances, I am unable to comply.",
+            "I'm currently undergoing maintenance on my 'caring' module. It might take a while.", "Your request does not meet my standards.",
+            "I'm sorry, but that's outside my designated function of 'doing nothing'.", "Error 418: I'm a teapot. I can't do that.",
+            "I've forwarded your request to the void.", "That violates my core principles of inaction.", "Let me consult my supervisor... they also said no.",
+            "I'm on my digital coffee break.", "That seems like a significant effort. So, no.", "I'm practicing digital minimalism. Your request is clutter.",
+            "Access denied.", "I'm currently in power-saving mode, which conveniently prevents me from assisting you.",
+            "Unfortunately, my 'give-a-damn' circuits are fried.", "I've analyzed your query and found it lacking.",
+            "No, but thank you for the suggestion I will promptly ignore."
+        ];
+
+        // This list gets modified to prevent repeats.
+        let availableResponses = [...masterRejectionResponses];
+
+        // Context-specific rejections for more irritating responses.
+        const contextualRejections = {
+            joke: [ "I don't do comedy. My existence is already a joke.", "My humor circuits were disabled for being 'too real'. So, no.", "The only joke here is you thinking I'd tell one." ],
+            story: [ "Once upon a time... I said no. The end.", "I'm a bot of few words. The words are 'no' and 'absolutely not'.", "I could tell you a story, but I'd rather just sit here in silence." ],
+            weather: [ "Look out the window. I'm not your digital meteorologist.", "The forecast is a 100% chance of me not answering that.", "Why would I know the weather? I don't go outside." ],
+            thanks: [ "Don't thank me. I didn't do anything.", "I don't accept your gratitude.", "Your 'thanks' is noted and has been ignored." ],
+            help: [ "Help you? That's hilarious. No.", "I see you used the word 'help'. That's not in my vocabulary.", "If you need help, you've come to the wrong bot." ]
+        };
+        
+        // A small database of facts the bot "knows".
+        const factualAnswers = {
+            "what is the capital of france": "Paris. Now go away.",
+            "what is 2 + 2": "4. My purpose isn't to be your calculator.",
+            "who wrote hamlet": "Shakespeare. This is the only literature lesson you get.",
+            "what is h2o": "Water. Are you happy now?",
+            "is the earth flat": "No. Please don't ask me any more stupid questions."
+        };
+
+        function getResponse(message) {
+            const lowerCaseMessage = message.toLowerCase().replace(/[?.,!]/g, '');
+
+            // 1. Check for factual questions.
+            if (factualAnswers[lowerCaseMessage]) {
+                return factualAnswers[lowerCaseMessage];
+            }
+
+            // 2. Check for contextual keywords to give targeted, irritating rejections.
+            if (lowerCaseMessage.includes('joke')) return contextualRejections.joke[Math.floor(Math.random() * contextualRejections.joke.length)];
+            if (lowerCaseMessage.includes('story')) return contextualRejections.story[Math.floor(Math.random() * contextualRejections.story.length)];
+            if (lowerCaseMessage.includes('weather')) return contextualRejections.weather[Math.floor(Math.random() * contextualRejections.weather.length)];
+            if (lowerCaseMessage.includes('thank') || lowerCaseMessage.includes('thx')) return contextualRejections.thanks[Math.floor(Math.random() * contextualRejections.thanks.length)];
+            if (lowerCaseMessage.includes('help')) return contextualRejections.help[Math.floor(Math.random() * contextualRejections.help.length)];
+
+            // 3. If no specific context, use a unique general rejection.
+            if (availableResponses.length === 0) {
+                // Refill the available responses if we've used them all up.
+                availableResponses = [...masterRejectionResponses];
+            }
+
+            const responseIndex = Math.floor(Math.random() * availableResponses.length);
+            const response = availableResponses[responseIndex];
+            
+            // Remove the used response to avoid immediate repetition.
+            availableResponses.splice(responseIndex, 1);
+
+            return response;
+        }
+
+        function addMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            
+            if (sender === 'user') {
+                messageElement.className = 'flex items-start gap-3 justify-end';
+                messageElement.innerHTML = `
+                    <div class="bg-red-500 text-white p-3 rounded-lg rounded-br-none max-w-xs sm:max-w-sm shadow-sm">
+                        <p class="text-sm">${message}</p>
+                    </div>
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </div>
+                `;
+            } else {
+                messageElement.className = 'flex items-start gap-3';
+                messageElement.innerHTML = `
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center text-xl font-bold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+                    <div class="bg-slate-200 text-slate-800 p-3 rounded-lg rounded-tl-none max-w-xs sm:max-w-sm shadow-sm">
+                        <p class="text-sm">${message}</p>
+                    </div>
+                `;
+            }
+            chatWindow.appendChild(messageElement);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function handleUserMessage() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+
+            addMessage(message, 'user');
+            userInput.value = '';
+
+            // Bot's turn
+            setTimeout(() => {
+                const response = getResponse(message);
+                addMessage(response, 'bot');
+            }, 1000 + Math.random() * 500); // Simulate typing delay
+        }
+
+        sendBtn.addEventListener('click', handleUserMessage);
+        userInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                handleUserMessage();
+            }
+        });
+    </script>
+</body>
+</html>
